@@ -1,0 +1,307 @@
+<!-- <!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Browse Experiments - The Null Depot</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #111827; color: #E5E7EB; }
+        .btn-primary { background-color: #38bdf8; transition: background-color 0.3s ease; }
+        .btn-primary:hover { background-color: #0ea5e9; }
+        .btn-secondary { background-color: #374151; transition: background-color 0.3s ease; }
+        .btn-secondary:hover { background-color: #4b5563; }
+        .card { background-color: #1f2937; border: 1px solid #374151; transition: transform 0.3s ease, box-shadow 0.3s ease; }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 10px 15px -3px rgba(56, 189, 248, 0.1), 0 4px 6px -2px rgba(56, 189, 248, 0.05); }
+        .form-input { background-color: #374151; border: 1px solid #4b5563; color: #E5E7EB; }
+        .form-input:focus { outline: none; border-color: #38bdf8; box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.4); }
+    </style>
+</head>
+<body class="antialiased">
+
+    <nav class="bg-gray-900/80 backdrop-blur-md sticky top-0 z-50 border-b border-gray-700">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                 <a href="index.html" class="flex items-center space-x-2">
+                    <svg class="h-8 w-8 text-sky-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" /></svg>
+                    <span class="text-xl font-bold text-white">The Null Depot</span>
+                </a>
+                <div class="flex items-center space-x-4">
+                    <div id="logged-out-nav" class="flex items-center space-x-4">
+                        <a href="experiments.html" class="text-sm text-sky-400 font-bold">Browse</a>
+                        <a href="login.html" class="btn-secondary text-white font-bold py-2 px-4 rounded-lg text-sm">Login</a>
+                        <a href="signup.html" class="btn-primary text-white font-bold py-2 px-4 rounded-lg text-sm shadow-lg">Sign Up</a>
+                    </div>
+                    <div id="logged-in-nav" class="hidden items-center space-x-4">
+                        <span id="welcome-msg" class="text-sm text-gray-300"></span>
+                        <a href="experiments.html" class="text-sm text-sky-400 font-bold">Browse</a>
+                        <a href="profile.html" class="text-sm text-gray-300 hover:text-white">My Profile</a>
+                        <a href="submit.html" class="btn-primary text-white font-bold py-2 px-4 rounded-lg text-sm shadow-lg">Submit Entry</a>
+                        <button id="logout-btn" class="text-sm text-gray-400 hover:text-white">Logout</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+    
+    <main class="py-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h1 class="text-3xl font-bold mb-4 text-center">Browse Submissions</h1>
+             <div class="max-w-2xl mx-auto my-8">
+                <div class="relative">
+                    <input type="search" id="search-input" placeholder="Search for experiments..." class="w-full p-4 pr-12 text-lg rounded-lg form-input shadow-lg">
+                    <div class="absolute inset-y-0 right-0 flex items-center pr-3">
+                        <svg class="h-6 w-6 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                    </div>
+                </div>
+            </div>
+
+            <div id="results-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            </div>
+             <p id="no-results" class="text-center text-gray-400 py-8 hidden">No matching experiments found.</p>
+        </div>
+    </main>
+
+<script>
+function initializeAndGetExperiments() {
+    let experiments = JSON.parse(localStorage.getItem('experiments'));
+    if (!experiments) {
+        experiments = [
+            { id: 1, author: "Admin", title: "Hypothesis on Protein AG-42b failing to inhibit cancer cell growth", field: "Biochemistry", summary: "Investigated the potential of protein AG-42b as an inhibitor for kinase-driven cell proliferation in vitro. The hypothesis was that AG-42b would bind to the enzyme's active site.", result: "No significant inhibition was observed at any concentration. Spectrometry suggests the protein does not bind as hypothesized, rendering this pathway non-viable." },
+            { id: 2, author: "Admin", title: "RNN Model for predicting stock market fluctuations shows no alpha", field: "Computer Science", summary: "A Recurrent Neural Network was trained on 10 years of S&P 500 data to predict next-day price movements. Features included volume, moving averages, and sentiment analysis.", result: "The model's predictive accuracy did not exceed 51%, which is statistically insignificant and provides no alpha over a random walk model. The approach was abandoned." }
+        ];
+        localStorage.setItem('experiments', JSON.stringify(experiments));
+    }
+    return experiments;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const loggedOutNav = document.getElementById('logged-out-nav');
+    const loggedInNav = document.getElementById('logged-in-nav');
+    const welcomeMsg = document.getElementById('welcome-msg');
+    const logoutBtn = document.getElementById('logout-btn');
+    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+
+    if (currentUser) {
+        loggedOutNav.classList.add('hidden');
+        loggedInNav.classList.remove('hidden');
+        loggedInNav.classList.add('flex');
+        welcomeMsg.textContent = `Welcome, ${currentUser.name}!`;
+    } else {
+        loggedOutNav.classList.remove('hidden');
+        loggedInNav.classList.add('hidden');
+        loggedInNav.classList.remove('flex');
+    }
+     if(logoutBtn) {
+        logoutBtn.addEventListener('click', () => {
+            localStorage.removeItem('currentUser');
+            window.location.href = 'index.html';
+        });
+    }
+
+    const resultsGrid = document.getElementById('results-grid');
+    const searchInput = document.getElementById('search-input');
+    let experiments = initializeAndGetExperiments();
+
+    function renderExperiments(data) {
+        resultsGrid.innerHTML = '';
+        data.forEach(exp => {
+            const card = document.createElement('div');
+            card.className = 'card rounded-lg p-6 flex flex-col';
+            card.innerHTML = `
+                <h3 class="text-lg font-bold text-white">${exp.title}</h3>
+                <span class="inline-block bg-sky-900/50 text-sky-300 text-xs font-semibold px-2.5 py-0.5 rounded-full my-2 self-start">${exp.field}</span>
+                <p class="text-gray-400 text-sm mb-2"><strong class="text-gray-200">Summary:</strong> ${exp.summary}</p>
+                <p class="text-gray-400 text-sm"><strong class="text-red-400">Null Result:</strong> ${exp.result}</p>
+                <p class="text-xs text-gray-500 mt-4 pt-2 border-t border-gray-700">Submitted by: ${exp.author || 'Anonymous'}</p>
+            `;
+            resultsGrid.appendChild(card);
+        });
+    }
+    
+    searchInput.addEventListener('input', (e) => {
+        const searchTerm = e.target.value.toLowerCase();
+        const filtered = experiments.filter(exp => 
+            Object.values(exp).some(val => String(val).toLowerCase().includes(searchTerm))
+        );
+        renderExperiments(filtered);
+    });
+
+    renderExperiments(experiments);
+});
+</script>
+
+</body>
+</html> -->
+
+
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Browse Experiments - The Null Depot</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #111827; color: #E5E7EB; }
+        .btn-primary { background-color: #38bdf8; transition: background-color 0.3s ease; }
+        .btn-primary:hover { background-color: #0ea5e9; }
+        .btn-secondary { background-color: #374151; transition: background-color 0.3s ease; }
+        .btn-secondary:hover { background-color: #4b5563; }
+        .card { background-color: #1f2937; border: 1px solid #374151; transition: transform 0.3s ease, box-shadow 0.3s ease; }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 10px 15px -3px rgba(56, 189, 248, 0.1), 0 4px 6px -2px rgba(56, 189, 248, 0.05); }
+        .form-input { background-color: #374151; border: 1px solid #4b5563; color: #E5E7EB; }
+        .form-input:focus { outline: none; border-color: #38bdf8; box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.4); }
+    </style>
+</head>
+<body class="antialiased">
+
+    <nav class="bg-gray-900/80 backdrop-blur-md sticky top-0 z-50 border-b border-gray-700">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                 <a href="index.html" class="flex items-center space-x-2">
+                    <svg class="h-8 w-8 text-sky-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" /></svg>
+                    <span class="text-xl font-bold text-white">The Null Depot</span>
+                </a>
+                <div class="flex items-center space-x-4">
+                    <div id="logged-out-nav" class="flex items-center space-x-4">
+                        <a href="experiments.html" class="text-sm text-sky-400 font-bold">Browse</a>
+                        <a href="login.html" class="btn-secondary text-white font-bold py-2 px-4 rounded-lg text-sm">Login</a>
+                        <a href="signup.html" class="btn-primary text-white font-bold py-2 px-4 rounded-lg text-sm shadow-lg">Sign Up</a>
+                    </div>
+                    <div id="logged-in-nav" class="hidden items-center space-x-4">
+                        <span id="welcome-msg" class="text-sm text-gray-300"></span>
+                        <a href="experiments.html" class="text-sm text-sky-400 font-bold">Browse</a>
+                        <a href="profile.html" class="text-sm text-gray-300 hover:text-white">My Profile</a>
+                        <a href="submit.html" class="btn-primary text-white font-bold py-2 px-4 rounded-lg text-sm shadow-lg">Submit Entry</a>
+                        <button id="logout-btn" class="text-sm text-gray-400 hover:text-white">Logout</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+    
+    <main class="py-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h1 id="page-title" class="text-3xl font-bold mb-4 text-center">Browse Submissions</h1>
+             <div class="max-w-2xl mx-auto my-8">
+                <div class="relative">
+                    <input type="search" id="search-input" placeholder="Search for experiments..." class="w-full p-4 pr-12 text-lg rounded-lg form-input shadow-lg">
+                    <div class="absolute inset-y-0 right-0 flex items-center pr-3">
+                        <svg class="h-6 w-6 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                    </div>
+                </div>
+            </div>
+
+            <div id="results-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            </div>
+             <p id="no-results" class="text-center text-gray-400 py-8 hidden">No matching experiments found.</p>
+        </div>
+    </main>
+
+<script>
+function initializeAndGetExperiments() {
+    let experiments = JSON.parse(localStorage.getItem('experiments'));
+    if (!experiments) {
+        experiments = [
+            { id: 1, author: "Admin", title: "Hypothesis on Protein AG-42b failing to inhibit cancer cell growth", field: "Biochemistry", summary: "Investigated the potential of protein AG-42b as an inhibitor for kinase-driven cell proliferation in vitro. The hypothesis was that AG-42b would bind to the enzyme's active site.", result: "No significant inhibition was observed at any concentration. Spectrometry suggests the protein does not bind as hypothesized, rendering this pathway non-viable." },
+            { id: 2, author: "Admin", title: "RNN Model for predicting stock market fluctuations shows no alpha", field: "Computer Science", summary: "A Recurrent Neural Network was trained on 10 years of S&P 500 data to predict next-day price movements. Features included volume, moving averages, and sentiment analysis.", result: "The model's predictive accuracy did not exceed 51%, which is statistically insignificant and provides no alpha over a random walk model. The approach was abandoned." }
+        ];
+        localStorage.setItem('experiments', JSON.stringify(experiments));
+    }
+    return experiments;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const loggedOutNav = document.getElementById('logged-out-nav');
+    const loggedInNav = document.getElementById('logged-in-nav');
+    const welcomeMsg = document.getElementById('welcome-msg');
+    const logoutBtn = document.getElementById('logout-btn');
+    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+
+    if (currentUser) {
+        loggedOutNav.classList.add('hidden');
+        loggedInNav.classList.remove('hidden');
+        loggedInNav.classList.add('flex');
+        welcomeMsg.textContent = `Welcome, ${currentUser.name}!`;
+    } else {
+        loggedOutNav.classList.remove('hidden');
+        loggedInNav.classList.add('hidden');
+        loggedInNav.classList.remove('flex');
+    }
+     if(logoutBtn) {
+        logoutBtn.addEventListener('click', () => {
+            localStorage.removeItem('currentUser');
+            window.location.href = 'index.html';
+        });
+    }
+
+    const resultsGrid = document.getElementById('results-grid');
+    const searchInput = document.getElementById('search-input');
+    const pageTitle = document.getElementById('page-title');
+    let allExperiments = initializeAndGetExperiments();
+    let experimentsToDisplay = [...allExperiments];
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const action = urlParams.get('action');
+
+    if (action) {
+        const field = urlParams.get('field');
+        switch(action) {
+            case 'filter':
+                pageTitle.textContent = `Results for: ${field}`;
+                experimentsToDisplay = allExperiments.filter(exp => exp.field === field);
+                break;
+            case 'random':
+                pageTitle.textContent = 'A Random Discovery';
+                const randomIndex = Math.floor(Math.random() * allExperiments.length);
+                experimentsToDisplay = [allExperiments[randomIndex]];
+                break;
+            case 'newest':
+                pageTitle.textContent = 'The Newest Submission';
+                experimentsToDisplay = [allExperiments.reduce((a, b) => a.id > b.id ? a : b)];
+                break;
+            case 'oldest':
+                pageTitle.textContent = 'The Oldest Entry';
+                experimentsToDisplay = [allExperiments.reduce((a, b) => a.id < b.id ? a : b)];
+                break;
+        }
+    }
+
+    function renderExperiments(data) {
+        resultsGrid.innerHTML = '';
+        if (data.length === 0) {
+            document.getElementById('no-results').classList.remove('hidden');
+            return;
+        }
+        document.getElementById('no-results').classList.add('hidden');
+        data.forEach(exp => {
+            const card = document.createElement('div');
+            card.className = 'card rounded-lg p-6 flex flex-col';
+            card.innerHTML = `
+                <h3 class="text-lg font-bold text-white">${exp.title}</h3>
+                <span class="inline-block bg-sky-900/50 text-sky-300 text-xs font-semibold px-2.5 py-0.5 rounded-full my-2 self-start">${exp.field}</span>
+                <p class="text-gray-400 text-sm mb-2"><strong class="text-gray-200">Summary:</strong> ${exp.summary}</p>
+                <p class="text-gray-400 text-sm"><strong class="text-red-400">Null Result:</strong> ${exp.result}</p>
+                <p class="text-xs text-gray-500 mt-4 pt-2 border-t border-gray-700">Submitted by: ${exp.author || 'Anonymous'}</p>
+            `;
+            resultsGrid.appendChild(card);
+        });
+    }
+    
+    searchInput.addEventListener('input', (e) => {
+        const searchTerm = e.target.value.toLowerCase();
+        const filtered = allExperiments.filter(exp => 
+            Object.values(exp).some(val => String(val).toLowerCase().includes(searchTerm))
+        );
+        renderExperiments(filtered);
+    });
+
+    renderExperiments(experimentsToDisplay);
+});
+</script>
+
+</body>
+</html>

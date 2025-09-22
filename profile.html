@@ -1,0 +1,388 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile - The Null Depot</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #111827; color: #E5E7EB; }
+        .btn-primary { background-color: #38bdf8; transition: background-color 0.3s ease; }
+        .btn-primary:hover { background-color: #0ea5e9; }
+        .btn-secondary { background-color: #374151; transition: background-color 0.3s ease; }
+        .btn-secondary:hover { background-color: #4b5563; }
+        .stat-card { background-color: #1f2937; border: 1px solid #374151; }
+        .hero-gradient-text { background: linear-gradient(to right, #38bdf8, #818cf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    </style>
+</head>
+<body class="antialiased">
+    <script>
+        if (!localStorage.getItem('currentUser')) {
+            window.location.href = 'login.html';
+        }
+    </script>
+
+    <nav class="bg-gray-900/80 backdrop-blur-md sticky top-0 z-50 border-b border-gray-700">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <a href="index.html" class="flex items-center space-x-2">
+                    <svg class="h-8 w-8 text-sky-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" /></svg>
+                    <span class="text-xl font-bold text-white">The Null Depot</span>
+                </a>
+                <div id="logged-in-nav" class="flex items-center space-x-4">
+                    <span id="welcome-msg" class="text-sm text-gray-300"></span>
+                    <a href="experiments.html" class="text-sm text-gray-300 hover:text-white">Browse</a>
+                    <a href="profile.html" class="text-sm text-sky-400 font-bold">My Profile</a>
+                    <a href="submit.html" class="btn-primary text-white font-bold py-2 px-4 rounded-lg text-sm shadow-lg">Submit Entry</a>
+                    <button id="logout-btn" class="text-sm text-gray-400 hover:text-white">Logout</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+    
+    <main class="py-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="stat-card rounded-lg p-8 mb-12 flex items-center space-x-6">
+                <img id="profile-avatar" src="https://i.pravatar.cc/100" alt="User Avatar" class="w-24 h-24 rounded-full border-4 border-gray-600">
+                <div>
+                    <h1 id="user-name" class="text-3xl font-bold text-white">User Name</h1>
+                    <p id="user-email" class="text-lg text-gray-400">user@example.com</p>
+                    <button id="edit-profile-btn" class="mt-2 text-sm text-sky-400 hover:text-sky-300">Change Photo</button>
+                </div>
+            </div>
+
+            <div id="edit-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 hidden">
+                <div class="bg-gray-800 rounded-lg shadow-xl p-8 max-w-sm w-full text-center border border-gray-700">
+                    <h3 class="text-lg font-medium text-white mb-4">Update Profile Photo</h3>
+                    <p class="text-sm text-gray-400 mb-4">Paste the URL of an image from the web.</p>
+                    <form id="avatar-form">
+                        <input id="avatar-url-input" type="url" placeholder="https://example.com/my-image.png" class="w-full p-2 rounded-md bg-gray-700 border border-gray-600 text-white focus:outline-none focus:border-sky-500">
+                        <div class="mt-6 flex space-x-4">
+                            <button type="button" id="cancel-btn" class="btn-secondary text-white font-bold py-2 px-4 rounded-lg w-full">Cancel</button>
+                            <button type="submit" class="btn-primary text-white font-bold py-2 px-4 rounded-lg w-full">Save</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+
+            <h2 class="text-2xl font-bold mb-6">Your Contribution Stats</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+                <div class="stat-card rounded-lg p-6 text-center">
+                    <h3 class="text-lg font-medium text-gray-400">Your Submissions</h3>
+                    <p id="total-submissions" class="text-5xl font-bold mt-2 text-white">0</p>
+                </div>
+                <div class="stat-card rounded-lg p-6 text-center">
+                    <h3 class="text-lg font-medium text-gray-400">Your Estimated Impact</h3>
+                    <p id="resources-saved" class="text-5xl font-bold mt-2 hero-gradient-text">$0</p>
+                </div>
+            </div>
+
+            <div class="stat-card rounded-lg p-6">
+                <h2 class="text-xl font-bold text-center mb-6">Your Submissions by Field</h2>
+                <div class="max-w-2xl mx-auto">
+                     <canvas id="submissionsChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </main>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // --- GRAB ALL DOM ELEMENTS ---
+    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+    const welcomeMsg = document.getElementById('welcome-msg');
+    const logoutBtn = document.getElementById('logout-btn');
+    const userNameEl = document.getElementById('user-name');
+    const userEmailEl = document.getElementById('user-email');
+    const profileAvatarEl = document.getElementById('profile-avatar');
+    const editProfileBtn = document.getElementById('edit-profile-btn');
+    const editModal = document.getElementById('edit-modal');
+    const avatarForm = document.getElementById('avatar-form');
+    const avatarUrlInput = document.getElementById('avatar-url-input');
+    const cancelBtn = document.getElementById('cancel-btn');
+
+    // --- INITIAL PAGE SETUP ---
+    if (!currentUser) {
+        window.location.href = 'login.html';
+        return; 
+    }
+
+    welcomeMsg.textContent = `Welcome, ${currentUser.name}!`;
+    userNameEl.textContent = currentUser.name;
+    userEmailEl.textContent = currentUser.email;
+
+    if (currentUser.avatarUrl) {
+        profileAvatarEl.src = currentUser.avatarUrl;
+    } else {
+        profileAvatarEl.src = `https://i.pravatar.cc/100?u=${currentUser.email}`;
+    }
+
+    // --- EVENT LISTENERS ---
+    logoutBtn.addEventListener('click', () => {
+        localStorage.removeItem('currentUser');
+        window.location.href = 'index.html';
+    });
+
+    editProfileBtn.addEventListener('click', () => {
+        avatarUrlInput.value = currentUser.avatarUrl || '';
+        editModal.classList.remove('hidden');
+    });
+
+    cancelBtn.addEventListener('click', () => {
+        editModal.classList.add('hidden');
+    });
+
+    avatarForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const newAvatarUrl = avatarUrlInput.value;
+        currentUser.avatarUrl = newAvatarUrl;
+        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+        profileAvatarEl.src = newAvatarUrl;
+        editModal.classList.add('hidden');
+    });
+
+    // --- PROFILE STATS AND CHART LOGIC ---
+    const allExperiments = JSON.parse(localStorage.getItem('experiments')) || [];
+    const userExperiments = allExperiments.filter(exp => exp.author === currentUser.name);
+
+    const totalSubmissionsEl = document.getElementById('total-submissions');
+    const resourcesSavedEl = document.getElementById('resources-saved');
+    
+    const totalSubmissions = userExperiments.length;
+    const estimatedCostPerExperiment = 5000;
+    const totalSaved = totalSubmissions * estimatedCostPerExperiment;
+
+    totalSubmissionsEl.textContent = totalSubmissions;
+    resourcesSavedEl.textContent = `$${totalSaved.toLocaleString()}`;
+
+    const fieldCounts = userExperiments.reduce((acc, exp) => {
+        acc[exp.field] = (acc[exp.field] || 0) + 1;
+        return acc;
+    }, {});
+
+    const chartLabels = Object.keys(fieldCounts);
+    const chartData = Object.values(fieldCounts);
+
+    const ctx = document.getElementById('submissionsChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: chartLabels,
+            datasets: [{
+                label: 'Submissions',
+                data: chartData,
+                backgroundColor: ['rgba(56, 189, 248, 0.7)', 'rgba(129, 140, 248, 0.7)', 'rgba(244, 114, 182, 0.7)', 'rgba(52, 211, 153, 0.7)', 'rgba(251, 146, 60, 0.7)', 'rgba(240, 82, 82, 0.7)'],
+                borderColor: '#1f2937',
+                borderWidth: 3
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: { color: '#E5E7EB', font: { size: 14 } }
+                }
+            }
+        }
+    });
+});
+</script>
+
+</body>
+</html> -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile - The Null Depot</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #111827; color: #E5E7EB; }
+        .btn-primary { background-color: #38bdf8; transition: background-color 0.3s ease; }
+        .btn-primary:hover { background-color: #0ea5e9; }
+        .btn-secondary { background-color: #374151; transition: background-color 0.3s ease; }
+        .btn-secondary:hover { background-color: #4b5563; }
+        .stat-card { background-color: #1f2937; border: 1px solid #374151; }
+        .hero-gradient-text { background: linear-gradient(to right, #38bdf8, #818cf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    </style>
+</head>
+<body class="antialiased">
+    <script>
+        if (!localStorage.getItem('currentUser')) {
+            window.location.href = 'login.html';
+        }
+    </script>
+
+    <nav class="bg-gray-900/80 backdrop-blur-md sticky top-0 z-50 border-b border-gray-700">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <a href="index.html" class="flex items-center space-x-2">
+                    <svg class="h-8 w-8 text-sky-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" /></svg>
+                    <span class="text-xl font-bold text-white">The Null Depot</span>
+                </a>
+                <div id="logged-in-nav" class="flex items-center space-x-4">
+                    <span id="welcome-msg" class="text-sm text-gray-300"></span>
+                    <a href="experiments.html" class="text-sm text-gray-300 hover:text-white">Browse</a>
+                    <a href="profile.html" class="text-sm text-sky-400 font-bold">My Profile</a>
+                    <a href="submit.html" class="btn-primary text-white font-bold py-2 px-4 rounded-lg text-sm shadow-lg">Submit Entry</a>
+                    <button id="logout-btn" class="text-sm text-gray-400 hover:text-white">Logout</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+    
+    <main class="py-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="stat-card rounded-lg p-8 mb-12 flex items-center space-x-6">
+                <img id="profile-avatar" src="https://i.pravatar.cc/100" alt="User Avatar" class="w-24 h-24 rounded-full border-4 border-gray-600">
+                <div>
+                    <h1 id="user-name" class="text-3xl font-bold text-white">User Name</h1>
+                    <p id="user-email" class="text-lg text-gray-400">user@example.com</p>
+                    <button id="edit-profile-btn" class="mt-2 text-sm text-sky-400 hover:text-sky-300">Change Photo</button>
+                </div>
+            </div>
+
+            <div id="edit-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 hidden">
+                <div class="bg-gray-800 rounded-lg shadow-xl p-8 max-w-sm w-full text-center border border-gray-700">
+                    <h3 class="text-lg font-medium text-white mb-4">Update Profile Photo</h3>
+                    <p class="text-sm text-gray-400 mb-4">Paste the URL of an image from the web.</p>
+                    <form id="avatar-form">
+                        <input id="avatar-url-input" type="url" placeholder="https://example.com/my-image.png" class="w-full p-2 rounded-md bg-gray-700 border border-gray-600 text-white focus:outline-none focus:border-sky-500">
+                        <div class="mt-6 flex space-x-4">
+                            <button type="button" id="cancel-btn" class="btn-secondary text-white font-bold py-2 px-4 rounded-lg w-full">Cancel</button>
+                            <button type="submit" class="btn-primary text-white font-bold py-2 px-4 rounded-lg w-full">Save</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <h2 class="text-2xl font-bold mb-6">Your Contribution Stats</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+                <div class="stat-card rounded-lg p-6 text-center">
+                    <h3 class="text-lg font-medium text-gray-400">Your Submissions</h3>
+                    <p id="total-submissions" class="text-5xl font-bold mt-2 text-white">0</p>
+                </div>
+                <div class="stat-card rounded-lg p-6 text-center">
+                    <h3 class="text-lg font-medium text-gray-400">Your Estimated Impact</h3>
+                    <p id="resources-saved" class="text-5xl font-bold mt-2 hero-gradient-text">$0</p>
+                </div>
+            </div>
+
+            <div class="stat-card rounded-lg p-6">
+                <h2 class="text-xl font-bold text-center mb-6">Your Submissions by Field</h2>
+                <div class="max-w-2xl mx-auto">
+                     <canvas id="submissionsChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </main>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+    const welcomeMsg = document.getElementById('welcome-msg');
+    const logoutBtn = document.getElementById('logout-btn');
+    const userNameEl = document.getElementById('user-name');
+    const userEmailEl = document.getElementById('user-email');
+    const profileAvatarEl = document.getElementById('profile-avatar');
+    const editProfileBtn = document.getElementById('edit-profile-btn');
+    const editModal = document.getElementById('edit-modal');
+    const avatarForm = document.getElementById('avatar-form');
+    const avatarUrlInput = document.getElementById('avatar-url-input');
+    const cancelBtn = document.getElementById('cancel-btn');
+
+    if (!currentUser) {
+        window.location.href = 'login.html';
+        return; 
+    }
+
+    welcomeMsg.textContent = `Welcome, ${currentUser.name}!`;
+    userNameEl.textContent = currentUser.name;
+    userEmailEl.textContent = currentUser.email;
+
+    if (currentUser.avatarUrl) {
+        profileAvatarEl.src = currentUser.avatarUrl;
+    } else {
+        profileAvatarEl.src = `https://i.pravatar.cc/100?u=${currentUser.email}`;
+    }
+
+    logoutBtn.addEventListener('click', () => {
+        localStorage.removeItem('currentUser');
+        window.location.href = 'index.html';
+    });
+
+    editProfileBtn.addEventListener('click', () => {
+        avatarUrlInput.value = currentUser.avatarUrl || '';
+        editModal.classList.remove('hidden');
+    });
+
+    cancelBtn.addEventListener('click', () => {
+        editModal.classList.add('hidden');
+    });
+
+    avatarForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const newAvatarUrl = avatarUrlInput.value;
+        currentUser.avatarUrl = newAvatarUrl;
+        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+        profileAvatarEl.src = newAvatarUrl;
+        editModal.classList.add('hidden');
+    });
+
+    const allExperiments = JSON.parse(localStorage.getItem('experiments')) || [];
+    const userExperiments = allExperiments.filter(exp => exp.author === currentUser.name);
+
+    const totalSubmissionsEl = document.getElementById('total-submissions');
+    const resourcesSavedEl = document.getElementById('resources-saved');
+    
+    const totalSubmissions = userExperiments.length;
+    const estimatedCostPerExperiment = 5000;
+    const totalSaved = totalSubmissions * estimatedCostPerExperiment;
+
+    totalSubmissionsEl.textContent = totalSubmissions;
+    resourcesSavedEl.textContent = `$${totalSaved.toLocaleString()}`;
+
+    const fieldCounts = userExperiments.reduce((acc, exp) => {
+        acc[exp.field] = (acc[exp.field] || 0) + 1;
+        return acc;
+    }, {});
+
+    const chartLabels = Object.keys(fieldCounts);
+    const chartData = Object.values(fieldCounts);
+
+    const ctx = document.getElementById('submissionsChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: chartLabels,
+            datasets: [{
+                label: 'Submissions',
+                data: chartData,
+                backgroundColor: ['rgba(56, 189, 248, 0.7)', 'rgba(129, 140, 248, 0.7)', 'rgba(244, 114, 182, 0.7)', 'rgba(52, 211, 153, 0.7)', 'rgba(251, 146, 60, 0.7)', 'rgba(240, 82, 82, 0.7)'],
+                borderColor: '#1f2937',
+                borderWidth: 3
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: { color: '#E5E7EB', font: { size: 14 } }
+                }
+            }
+        }
+    });
+});
+</script>
+
+</body>
+</html>
