@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wheel of Discovery - The Null Depot</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #111827; 
+            color: #E5E7EB;
+        }
+        .wheel-container {
+            position: relative;
+            width: 400px;
+            height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .wheel-pointer {
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 25px solid transparent;
+            border-right: 25px solid transparent;
+            border-top: 40px solid #f59e0b; /* Amber/gold color for the pointer */
+            z-index: 10;
+        }
+        #wheel {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 10px solid #374151;
+            position: relative;
+            overflow: hidden;
+            /* This CSS transition creates the smooth spinning animation */
+            transition: transform 6s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+        .segment {
+            position: absolute;
+            width: 50%;
+            height: 50%;
+            top: 50%;
+            left: 50%;
+            transform-origin: 0% 0%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 16px;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+        .wheel-center {
+            position: absolute;
+            width: 70px;
+            height: 70px;
+            background: #1f2937;
+            border-radius: 50%;
+            border: 8px solid #4b5563;
+        }
+        .btn-primary { 
+            background-color: #38bdf8; 
+            transition: background-color 0.3s ease; 
+        }
+        .btn-primary:hover:not(:disabled) { 
+            background-color: #0ea5e9;
+        }
+        .btn-primary:disabled {
+            background-color: #4b5563;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen">
+
+    <h1 class="text-4xl font-extrabold text-white mb-4">The Wheel of Discovery</h1>
+    <p class="text-lg text-gray-400 mb-12">Click the button to spin for a random reward!</p>
+
+    <div class="wheel-container">
+        <div class="wheel-pointer"></div>
+        <div id="wheel">
+            <!-- The segments of the wheel will be added here by JavaScript -->
+        </div>
+        <div class="wheel-center"></div>
+    </div>
+    
+    <button id="spin-btn" class="btn-primary text-white font-bold py-4 px-12 rounded-lg text-xl mt-12 shadow-lg tracking-wider">SPIN</button>
+
+    <!-- Reward Modal -->
+    <div id="reward-modal" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+        <div class="bg-gray-800 rounded-lg p-8 max-w-sm w-full text-center border border-gray-700 shadow-2xl">
+            <h2 id="reward-title" class="text-2xl font-bold text-white mb-4"></h2>
+            <p id="reward-text" class="text-gray-300 mb-6"></p>
+            <button id="close-modal-btn" class="btn-primary text-white font-bold py-2 px-6 rounded-lg w-full">Awesome!</button>
+        </div>
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const wheel = document.getElementById('wheel');
+    const spinBtn = document.getElementById('spin-btn');
+    const rewardModal = document.getElementById('reward-modal');
+    const rewardTitle = document.getElementById('reward-title');
+    const rewardText = document.getElementById('reward-text');
+    const closeModalBtn = document.getElementById('close-modal-btn');
+
+    // Define the segments of the wheel
+    const segments = [
+        { text: "Cosmic Theme", color: '#818cf8' },
+        { text: "Featured Post", color: '#38bdf8' },
+        { text: "Matrix Theme", color: '#34d399' },
+        { text: "Shoutout", color: '#f472b6' },
+        { text: "Blueprint Theme", color: '#a78bfa' },
+        { text: "No Reward", color: '#6b7280' }
+    ];
+
+    const segmentDegrees = 360 / segments.length;
+    let currentRotation = 0;
+    let isSpinning = false;
+
+    // This function creates the visual slices of the wheel
+    segments.forEach((segment, index) => {
+        const segmentEl = document.createElement('div');
+        segmentEl.className = 'segment';
+        
+        const rotation = (segmentDegrees * index) - (segmentDegrees / 2);
+        // This math creates and positions each colored slice
+        segmentEl.style.transform = `rotate(${rotation}deg) skewX(${90 - segmentDegrees}deg)`;
+        segmentEl.style.background = segment.color;
+
+        const textEl = document.createElement('div');
+        // This counter-transforms the text to make it readable
+        textEl.style.transform = `skewX(-${90 - segmentDegrees}deg) rotate(-${segmentDegrees / 2}deg)`;
+        textEl.textContent = segment.text;
+        
+        segmentEl.appendChild(textEl);
+        wheel.appendChild(segmentEl);
+    });
+
+    spinBtn.addEventListener('click', () => {
+        if (isSpinning) return;
+        isSpinning = true;
+        spinBtn.disabled = true;
+
+        // Calculate a random stop position
+        const randomSpins = Math.floor(Math.random() * 4) + 5; // 5 to 8 full spins for excitement
+        const randomStopAngle = Math.floor(Math.random() * 360);
+        const totalRotation = (randomSpins * 360) + randomStopAngle;
+
+        // Apply the rotation. The CSS transition will animate this change.
+        currentRotation += totalRotation;
+        wheel.style.transform = `rotate(${currentRotation}deg)`;
+        
+        // Wait for the animation to finish before showing the result
+        setTimeout(() => {
+            // Figure out which segment the pointer is on
+            const actualAngle = currentRotation % 360;
+            const winningSegmentIndex = Math.floor(actualAngle / segmentDegrees);
+            // Reverse the index because the wheel spins clockwise
+            const reward = segments.slice().reverse()[winningSegmentIndex];
+            
+            // Display the result in the pop-up modal
+            if (reward.text === 'No Reward') {
+                rewardTitle.textContent = 'Better Luck Next Time!';
+                rewardText.textContent = 'Keep contributing for more chances to win.';
+            } else {
+                rewardTitle.textContent = 'Congratulations!';
+                rewardText.textContent = `You won: ${reward.text}!`;
+            }
+            rewardModal.classList.remove('hidden');
+
+        }, 6100); // Must be slightly longer than the CSS transition duration
+    });
+    
+    closeModalBtn.addEventListener('click', () => {
+        rewardModal.classList.add('hidden');
+        isSpinning = false;
+        spinBtn.disabled = false; // Re-enable the button for another spin
+    });
+});
+</script>
+</body>
+</html>

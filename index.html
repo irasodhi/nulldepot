@@ -5,14 +5,89 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Null Depot</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #111827; color: #E5E7EB; }
-        .hero-gradient-text { background: linear-gradient(to right, #38bdf8, #818cf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .btn-primary { background-color: #38bdf8; transition: background-color 0.3s ease; }
-        .btn-primary:hover { background-color: #0ea5e9; }
-        .btn-secondary { background-color: #374151; transition: background-color 0.3s ease; }
-        .btn-secondary:hover { background-color: #4b5563; }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #111827; 
+            color: #E5E7EB;
+        }
+        .hero-gradient-text { 
+            background: linear-gradient(to right, #38bdf8, #818cf8); 
+            -webkit-background-clip: text; 
+            -webkit-text-fill-color: transparent; 
+        }
+        .btn-primary { 
+            background-color: #38bdf8; 
+            transition: background-color 0.3s ease; 
+        }
+        .btn-primary:hover:not(:disabled) { 
+            background-color: #0ea5e9;
+        }
+        .btn-primary:disabled {
+            background-color: #4b5563;
+            cursor: not-allowed;
+        }
+        .btn-secondary { 
+            background-color: #374151; 
+            transition: background-color 0.3s ease; 
+        }
+        .btn-secondary:hover { 
+            background-color: #4b5563; 
+        }
+
+        /* --- CSS for the Spin Wheel --- */
+        .wheel-container {
+            position: relative;
+            width: 400px;
+            height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .wheel-pointer {
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 25px solid transparent;
+            border-right: 25px solid transparent;
+            border-top: 40px solid #f59e0b; /* Amber/gold pointer */
+            z-index: 10;
+        }
+        #wheel {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 10px solid #374151;
+            position: relative;
+            overflow: hidden;
+            transition: transform 6s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+        .segment {
+            position: absolute;
+            width: 50%;
+            height: 50%;
+            top: 50%;
+            left: 50%;
+            transform-origin: 0% 0%;
+            display: flex;
+            align-items: center;
+            font-weight: bold;
+            font-size: 16px;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+        .wheel-center {
+            position: absolute;
+            width: 70px;
+            height: 70px;
+            background: #1f2937;
+            border-radius: 50%;
+            border: 8px solid #4b5563;
+        }
     </style>
 </head>
 <body class="antialiased">
@@ -43,6 +118,7 @@
     </nav>
 
     <main>
+        <!-- HERO SECTION -->
         <div class="pt-20 pb-24 text-center">
             <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
                 <h1 class="text-4xl md:text-6xl font-extrabold tracking-tighter mb-4">
@@ -58,18 +134,20 @@
             </div>
         </div>
 
-        <div class="py-20 bg-gray-900 text-center">
-            <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-                <h2 class="text-3xl font-bold mb-4">Try the Wheel of Discovery!</h2>
-                <p class="text-lg text-gray-400 mb-8">Spin the wheel to explore a random finding and spark your next great idea.</p>
-                <div class="relative inline-block">
-                    <canvas id="discovery-wheel" width="450" height="450" class="cursor-pointer"></canvas>
-                    <img src="https://th.bing.com/th?q=Spin+the+Wheel+Transparent+Background&w=120&h=120&c=1&rs=1&qlt=70&o=7&cb=1&dpr=1.3&pid=InlineBlock&rm=3&mkt=en-IN&cc=IN&setlang=en&adlt=moderate&t=1&mw=247" class="absolute h-16" style="top: 50%; left: 50%; transform: translate(-50%, -150%);" alt="Wheel Pointer">
+        <!-- SPIN THE WHEEL SECTION -->
+        <div class="py-20 bg-gray-900/50 text-center">
+            <h2 class="text-4xl font-extrabold text-white mb-4">The Wheel of Discovery</h2>
+            <p class="text-lg text-gray-400 mb-12">Spin to explore our database in a new way!</p>
+
+            <div class="wheel-container mx-auto">
+                <div class="wheel-pointer"></div>
+                <div id="wheel">
+                    <!-- Segments will be added here by JavaScript -->
                 </div>
-                <div class="mt-8">
-                    <button id="spin-button" class="btn-primary text-white font-bold py-4 px-8 rounded-lg shadow-lg text-xl">Spin the Wheel!</button>
-                </div>
+                <div class="wheel-center"></div>
             </div>
+            
+            <button id="spin-btn" class="btn-primary text-white font-bold py-4 px-12 rounded-lg text-xl mt-12 shadow-lg tracking-wider">SPIN</button>
         </div>
     </main>
 
@@ -79,103 +157,124 @@
         </div>
     </footer>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/latest/TweenMax.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/winwheel.js@2.8.0/dist/Winwheel.min.js"></script>
-    <script>
-        // Use window.onload to ensure all external scripts like Winwheel.js are fully loaded first.
-        window.onload = function() {
-            // --- NAVIGATION LOGIC ---
-            const loggedOutNav = document.getElementById('logged-out-nav');
-            const loggedInNav = document.getElementById('logged-in-nav');
-            const welcomeMsg = document.getElementById('welcome-msg');
-            const logoutBtn = document.getElementById('logout-btn');
-            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+    <!-- Reward Modal -->
+    <div id="reward-modal" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+        <div class="bg-gray-800 rounded-lg p-8 max-w-sm w-full text-center border border-gray-700 shadow-2xl">
+            <h2 id="reward-title" class="text-2xl font-bold text-white mb-4"></h2>
+            <p id="reward-text" class="text-gray-300 mb-6"></p>
+            <button id="close-modal-btn" class="btn-primary text-white font-bold py-2 px-6 rounded-lg w-full">Let's Go!</button>
+        </div>
+    </div>
 
-            if (currentUser) {
-                if (loggedOutNav) loggedOutNav.classList.add('hidden');
-                if (loggedInNav) {
-                    loggedInNav.classList.remove('hidden');
-                    loggedInNav.classList.add('flex');
-                }
-                if (welcomeMsg) welcomeMsg.textContent = `Welcome, ${currentUser.name}!`;
-            } else {
-                if (loggedOutNav) loggedOutNav.classList.remove('hidden');
-                if (loggedInNav) {
-                    loggedInNav.classList.add('hidden');
-                    loggedInNav.classList.remove('flex');
-                }
-            }
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // --- NAVIGATION LOGIC ---
+    const loggedOutNav = document.getElementById('logged-out-nav');
+    const loggedInNav = document.getElementById('logged-in-nav');
+    const welcomeMsg = document.getElementById('welcome-msg');
+    const logoutBtn = document.getElementById('logout-btn');
+    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
 
-            if(logoutBtn) {
-                logoutBtn.addEventListener('click', () => {
-                    localStorage.removeItem('currentUser');
-                    window.location.href = 'index.html';
-                });
-            }
+    if (currentUser) {
+        if(loggedOutNav) loggedOutNav.classList.add('hidden');
+        if(loggedInNav) {
+            loggedInNav.classList.remove('hidden');
+            loggedInNav.classList.add('flex');
+        }
+        if(welcomeMsg) welcomeMsg.textContent = `Welcome, ${currentUser.name}!`;
+    } else {
+        if(loggedOutNav) loggedOutNav.classList.remove('hidden');
+        if(loggedInNav) {
+            loggedInNav.classList.add('hidden');
+            loggedInNav.classList.remove('flex');
+        }
+    }
 
-            // --- WHEEL OF DISCOVERY LOGIC ---
-            const spinButton = document.getElementById('spin-button');
+    if(logoutBtn) {
+        logoutBtn.addEventListener('click', () => {
+            localStorage.removeItem('currentUser');
+            window.location.href = 'index.html';
+        });
+    }
+
+    // --- SPIN WHEEL LOGIC ---
+    const wheel = document.getElementById('wheel');
+    const spinBtn = document.getElementById('spin-btn');
+    const rewardModal = document.getElementById('reward-modal');
+    const rewardTitle = document.getElementById('reward-title');
+    const rewardText = document.getElementById('reward-text');
+    const closeModalBtn = document.getElementById('close-modal-btn');
+
+    // CORRECTED SEGMENTS TO MATCH YOUR THEME
+    const segments = [
+        { text: "Biochemistry", color: '#818cf8', action: () => { window.location.href = 'experiments.html?action=filter&field=Biochemistry'; }},
+        { text: "Random Study", color: '#38bdf8', action: () => { window.location.href = 'experiments.html?action=random'; }},
+        { text: "Comp Sci", color: '#34d399', action: () => { window.location.href = 'experiments.html?action=filter&field=Computer Science'; }},
+        { text: "Newest Post", color: '#f472b6', action: () => { window.location.href = 'experiments.html?action=newest'; }},
+        { text: "Neuroscience", color: '#a78bfa', action: () => { window.location.href = 'experiments.html?action=filter&field=Neuroscience'; }},
+        { text: "Submit Your Own", color: '#facc15', action: () => { window.location.href = 'submit.html'; }}
+    ];
+
+    const segmentDegrees = 360 / segments.length;
+    let currentRotation = 0;
+    let isSpinning = false;
+    let winningReward = null;
+
+    // Create and place the visual segments on the wheel
+    segments.forEach((segment, index) => {
+        const segmentEl = document.createElement('div');
+        segmentEl.className = 'segment';
+        
+        const rotation = (segmentDegrees * index);
+        segmentEl.style.transform = `rotate(${rotation}deg) skewY(${90 - segmentDegrees}deg)`;
+        segmentEl.style.background = segment.color;
+
+        const textEl = document.createElement('div');
+        // This transform correctly orients and positions the text
+        textEl.style.transform = `skewY(-${90 - segmentDegrees}deg) rotate(${segmentDegrees / 2}deg) translate(-50%, -50%)`;
+        textEl.style.position = 'absolute';
+        textEl.style.top = '50%';
+        textEl.style.left = '75%'; // Position text in the outer half of the segment for readability
+        textEl.textContent = segment.text;
+        
+        segmentEl.appendChild(textEl);
+        wheel.appendChild(segmentEl);
+    });
+
+    spinBtn.addEventListener('click', () => {
+        if (isSpinning) return;
+        isSpinning = true;
+        spinBtn.disabled = true;
+
+        const randomSpins = Math.floor(Math.random() * 4) + 5;
+        const randomStopAngle = Math.floor(Math.random() * 360);
+        const totalRotation = (randomSpins * 360) + randomStopAngle;
+
+        currentRotation += totalRotation;
+        wheel.style.transform = `rotate(${currentRotation}deg)`;
+        
+        setTimeout(() => {
+            const actualAngle = currentRotation % 360;
+            const winningSegmentIndex = Math.floor(actualAngle / segmentDegrees);
+            winningReward = segments.slice().reverse()[winningSegmentIndex];
             
-            // Check that the Winwheel library is loaded
-            if (typeof Winwheel !== 'undefined') {
-                const theWheel = new Winwheel({
-                    'canvasId'     : 'discovery-wheel',
-                    'numSegments'  : 8,
-                    'outerRadius'  : 210,
-                    'textFontSize' : 16,
-                    'textFillStyle': 'white',
-                    'segments'     :
-                    [
-                       {'fillStyle' : '#38bdf8', 'text' : 'Biochemistry'},
-                       {'fillStyle' : '#818cf8', 'text' : 'Random Study'},
-                       {'fillStyle' : '#f472b6', 'text' : 'Computer Science'},
-                       {'fillStyle' : '#34d399', 'text' : 'Newest Submission'},
-                       {'fillStyle' : '#fb923c', 'text' : 'Neuroscience'},
-                       {'fillStyle' : '#a78bfa', 'text' : 'Oldest Entry'},
-                       {'fillStyle' : '#f87171', 'text' : 'Genetics'},
-                       {'fillStyle' : '#facc15', 'text' : 'Submit Your Own!'},
-                    ],
-                    'animation' :
-                    {
-                        'type'     : 'spinToStop',
-                        'duration' : 7,
-                        'spins'    : 10,
-                        'callbackFinished' : handleSpinResult,
-                    }
-                });
+            rewardTitle.textContent = 'Discovery Made!';
+            rewardText.textContent = `The wheel landed on: ${winningReward.text}!`;
+            rewardModal.classList.remove('hidden');
 
-                function handleSpinResult(indicatedSegment) {
-                    const result = indicatedSegment.text;
-                    alert(`The wheel landed on: ${result}! Press OK to continue.`);
-                    switch(result) {
-                        case 'Submit Your Own!':
-                            window.location.href = 'submit.html';
-                            break;
-                        case 'Random Study':
-                            window.location.href = 'experiments.html?action=random';
-                            break;
-                        case 'Newest Submission':
-                            window.location.href = 'experiments.html?action=newest';
-                            break;
-                        case 'Oldest Entry':
-                            window.location.href = 'experiments.html?action=oldest';
-                            break;
-                        default:
-                            window.location.href = `experiments.html?action=filter&field=${encodeURIComponent(result)}`;
-                    }
-                }
-                
-                if (spinButton) {
-                    spinButton.addEventListener('click', () => {
-                        theWheel.startAnimation();
-                        spinButton.disabled = true;
-                    });
-                }
-            } else {
-                console.error("Winwheel library not loaded.");
-            }
-        };
-    </script>
-
+        }, 6100); // Must be slightly longer than the CSS transition
+    });
+    
+    closeModalBtn.addEventListener('click', () => {
+        if (winningReward && typeof winningReward.action === 'function') {
+            winningReward.action(); // Execute the action (e.g., redirect)
+        }
+        rewardModal.classList.add('hidden');
+        isSpinning = false;
+        spinBtn.disabled = false;
+    });
+});
+</script>
 </body>
 </html>
+
